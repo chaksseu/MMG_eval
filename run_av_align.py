@@ -10,6 +10,7 @@ import os
 import cv2
 import librosa
 import librosa.display
+from tqdm import tqdm
 
 
 # Function to extract frames from a video file
@@ -143,7 +144,8 @@ def calc_intersection_over_union(audio_peaks, video_peaks, fps):
             if video_peak - 1 / fps < audio_peak < video_peak + 1 / fps:
                 intersection_length += 1
                 break
-    # return intersection_length / (len(audio_peaks) + len(video_peaks) - intersection_length)
+    return intersection_length / (len(audio_peaks) + len(video_peaks) - intersection_length)
+    
     p1 = intersection_length / len(audio_peaks) if len(audio_peaks) > 0 else 0
     intersection_length = 0
     for video_peak in video_peaks:
@@ -166,9 +168,13 @@ if __name__ == "__main__":
     score = 0
     cnt = 0
 
-    for file in files:
+    for file in tqdm(files, desc="Processing files for av-align"):
 
         file = os.path.splitext(os.path.basename(file))[0]
+        
+        # gt data
+        #vfile = file.split('_audio')[0] + '_video'
+        
         video_path = os.path.join(args.video_dir, f'{file}.mp4')
         audio_path = os.path.join(args.audio_dir, f'{file}.wav')
 

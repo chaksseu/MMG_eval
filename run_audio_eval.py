@@ -44,8 +44,7 @@ import torchaudio
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torchmetrics.audio import (ScaleInvariantSignalDistortionRatio, ScaleInvariantSignalNoiseRatio,
-                                SignalDistortionRatio, SignalNoiseRatio, PerceptualEvaluationSpeechQuality,
-                                ShortTimeObjectiveIntelligibility)
+                                SignalDistortionRatio, SignalNoiseRatio)
 from utils.load_mel import WaveDataset
 import laion_clap
 from audio_metrics.clap_score import calculate_clap
@@ -60,14 +59,15 @@ def check_folders(preds_folder, target_folder):
     preds_files = [f for f in os.listdir(preds_folder) if f.endswith('.wav')]
     target_files = [f for f in os.listdir(target_folder) if f.endswith('.wav')]
 
+
     if len(preds_files) != len(target_files):
         print('Mismatch in number of files between preds and target folders.')
         return False
-
+    '''
     if set(preds_files) != set(target_files):
         print('Mismatch in filenames between preds and target folders.')
         return False
-    
+    '''
     return True
 
 
@@ -120,9 +120,7 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
         sdr_calculator = SignalDistortionRatio() if 'SDR' in metrics else None
         si_snr = ScaleInvariantSignalNoiseRatio() if 'SI_SNR' in metrics else None
         snr_calculator = SignalNoiseRatio() if 'SNR' in metrics else None
-        pesq_metric = PerceptualEvaluationSpeechQuality(16000, 'wb') if 'PESQ' in metrics else None
         fs = 16000
-        stoi_metric = ShortTimeObjectiveIntelligibility(fs, extended=False) if 'STOI' in metrics else None
 
 
     if 'FAD' in metrics or 'KL' in metrics or 'ISC' in metrics or 'FD' in metrics:
@@ -191,7 +189,7 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
             
             #print('Extracting features from %s.' % preds_folder)
             #featuresdict_1 = get_featuresdict(outputloader, device, mel_model)
-
+        '''
         if check_folders(preds_folder, target_folder) and 'KL' in metrics:
             kl_sigmoid, kl_softmax, kl_ref, paths_1 = calculate_kl(
                 featuresdict_1, featuresdict_2, 'logits', same_name
@@ -227,7 +225,7 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
                     featuresdict_1, featuresdict_2, feat_layer_name='2048'
                 )
                 out['frechet_distance'] = round(metric_fid, 3)
-
+        '''
 
     # Loading Clap Model
     if 'CLAP' in metrics:
@@ -252,24 +250,25 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
         if filename.endswith('.wav'):
             try:
                 preds_audio, _ = torchaudio.load(os.path.join(preds_folder, filename), num_frames=160000)
-                target_audio, _ = torchaudio.load(os.path.join(target_folder, filename), num_frames=160000)
-                min_len = min(preds_audio.size(1), target_audio.size(1))
-                preds_audio, target_audio = preds_audio[:, :min_len], target_audio[:, :min_len]
+                #target_audio, _ = torchaudio.load(os.path.join(target_folder, filename), num_frames=160000)
+                #min_len = min(preds_audio.size(1), target_audio.size(1))
+                #preds_audio, target_audio = preds_audio[:, :min_len], target_audio[:, :min_len]
                 
-                if np.shape(target_audio)[0] == 2:
-                    target_audio = target_audio.mean(dim=0)
+                #if np.shape(target_audio)[0] == 2:
+                #    target_audio = target_audio.mean(dim=0)
                 if np.shape(preds_audio)[0] == 2:
                     preds_audio = preds_audio.mean(dim=0)
 
                 # Compute and store the scores for the specified metrics
                 if 'CLAP' in metrics: scores['CLAP'].append(calculate_clap(model_clap, preds_audio, filename, new_freq))
+                '''
                 if si_snr: scores['SI_SNR'].append(si_snr(preds_audio.squeeze(), target_audio.squeeze()).item())
                 if snr_calculator: scores['SNR'].append(snr_calculator(preds_audio.squeeze(), target_audio.squeeze()).item())
                 if sdr_calculator: scores['SDR'].append(sdr_calculator(preds_audio.squeeze(), target_audio.squeeze()).item())
                 if si_sdr: scores['SI_SDR'].append(si_sdr(preds_audio.squeeze(), target_audio.squeeze()).item())
                 if pesq_metric: scores['PESQ'].append(pesq_metric(preds_audio.squeeze(), target_audio.squeeze()).item())
                 if stoi_metric: scores['STOI'].append(stoi_metric(preds_audio.squeeze(), target_audio.squeeze()).item())
-
+                '''
             except Exception as e:
                 print(f'Error processing {filename}: {e}')
 

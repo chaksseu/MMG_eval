@@ -17,7 +17,8 @@ def calculate_fvd(videos1, videos2, calculate_per_frame, calculate_final, device
     print("calculate_fvd...")
 
     # videos [batch_size, timestamps, channel, h, w]
-    
+    print("videos1.shape", videos1.shape)
+    print("videos2.shape", videos2.shape)
     assert videos1.shape == videos2.shape
 
     i3d = load_i3d_pretrained(device=device)

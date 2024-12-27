@@ -28,7 +28,7 @@ def get_feats(videos, detector, device, bs=10):
     # videos : torch.tensor BCTHW [0, 1]
     detector_kwargs = dict(rescale=False, resize=False, return_features=True) # Return raw features before the softmax layer.
     feats = np.empty((0, 400))
-    device = torch.device("cuda:0") if device is not torch.device("cpu") else device
+    device = torch.device("cpu") if device is None else device
     with torch.no_grad():
         for i in range((len(videos)-1)//bs + 1):
             feats = np.vstack([feats, detector(torch.stack([preprocess_single(video) for video in videos[i*bs:(i+1)*bs]]).to(device), **detector_kwargs).detach().cpu().numpy()])

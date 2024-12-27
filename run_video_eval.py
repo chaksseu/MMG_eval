@@ -46,6 +46,9 @@ from visual_metrics.calculate_vmaf import calculate_vmaf
 from visual_metrics.calculate_vif import calculate_vif
 import json
 
+import re  
+
+
 def load_video_frames(video_path, num_frames, frame_size=(224, 224)):
     cap = cv2.VideoCapture(video_path)
     frames = []
@@ -75,29 +78,23 @@ def load_videos_from_folder(folder_path, num_frames):
         videos_tensor_list_orig.append(video_tensor)
     return torch.stack(videos_tensor_list_orig)
 
-def clean_sentence(filename):
 
-    # 파일 이름에서 밑줄을 공백으로 바꾸고 확장자를 제거
-    sentence = filename.replace('_', ' ').replace('.mp4', '')
+excluded_words = ['batch', 'proc', 'sample', 'audio', 'video']
+pattern_words = re.compile(r'^(?:' + '|'.join(excluded_words) + r')\d*$', re.IGNORECASE)
+pattern_numbers = re.compile(r'^\d+$')
+
+def clean_sentence(filename):
+    if not isinstance(filename, str):
+        raise ValueError("filename must be a string")
     
-    # 제외할 단어 목록
-    excluded_words = ['batch', 'proc', 'sample', 'audio', 'video']
-    
-    # 제외할 단어 패턴 생성 (단어 뒤에 숫자가 올 수 있도록 수정)
-    pattern_words = r'\b(?:' + '|'.join(excluded_words) + r')\d*\b'
-    # 숫자 패턴 (단독으로 있는 숫자 제거)
-    pattern_numbers = r'\b\d+\b'
-    
-    # 제외할 단어 제거
-    sentence = re.sub(pattern_words, '', sentence, flags=re.IGNORECASE)
-    
-    # 숫자 제거
-    sentence = re.sub(pattern_numbers, '', sentence)
-    
-    # 불필요한 공백 제거
-    sentence = ' '.join(sentence.split())
-    
-    return sentence
+    sentence = filename.replace('_', ' ').replace('.wav', '')
+    words = sentence.split()
+    filtered_words = [
+        word for word in words 
+        if not pattern_words.match(word) and not pattern_numbers.match(word)
+    ]
+    cleaned_sentence = ' '.join(filtered_words)
+    return cleaned_sentence
 
 def load_videos_with_caps(folder_path, num_frames):
     videos_tensor_list_orig = []
@@ -143,15 +140,18 @@ def process_metric(metric_name, data):
     return ''.join(result)
 
 def main(args):
-    orig_videos = load_videos_from_folder(args.target_folder, args.num_frames)
-    new_videos = load_videos_from_folder(args.preds_folder, args.num_frames)
+    if 'fvd' or 'fid' in args.metrics:
+        orig_videos = load_videos_from_folder(args.target_folder, args.num_frames)
+        new_videos = load_videos_from_folder(args.preds_folder, args.num_frames)
 
     results, output_strs = {}, []
+    
     if 'fvd' in args.metrics:
         results['fvd'] = calculate_fvd(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final, args.device)
         print(results)
         output_strs.append(process_fvd(results))
-        
+
+    '''    
     if 'ssim' in args.metrics:
         results['ssim'] = calculate_ssim(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final)
         output_strs.append(process_metric('ssim', results))
@@ -167,28 +167,34 @@ def main(args):
     if 'ms_ssim' in args.metrics:
         results['ms_ssim'] = calculate_ms_ssim(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final)
         output_strs.append(process_metric('ms_ssim', results))
+    '''
+
     if 'fid' in args.metrics:
         results['fid'] = calculate_fid(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final, args.feat_layer)
         output_strs.append(process_metric('fid', results))
-    if 'mifid' in args.metrics:
-        results['mifid'] = calculate_mifid(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final, args.feat_layer)
-        output_strs.append(process_metric('mifid', results))
+
+    #if 'mifid' in args.metrics:
+    #    results['mifid'] = calculate_mifid(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final, args.feat_layer)
+    #    output_strs.append(process_metric('mifid', results))
     #if 'kid' in args.metrics:
     #    results['kid'] = calculate_kid(orig_videos, new_videos, args.calculate_per_frame, args.calculate_final, args.feat_layer, args.subset_size)
     #    output_strs.append(process_metric('kid', results))
+    
     if 'clip' in args.metrics:
         clip_videos, caps = load_videos_with_caps(args.preds_folder, args.num_frames)
-        results['clip'] = calculate_clip(clip_videos, caps, args.calculate_per_frame, args.calculate_final, args.clip_model)
+        results['clip'] = calculate_clip(clip_videos, caps, args.calculate_per_frame, args.calculate_final, args.clip_model, args.device)
         output_strs.append(process_metric('clip', results))
+
+    '''
     if 'vif' in args.metrics:
         results['vif'] = calculate_vif(args.target_folder, args.preds_folder)
         output_strs.append(process_metric('vif', results))
     if 'vmaf' in args.metrics:
         results['vmaf'] = calculate_vmaf(args.target_folder, args.preds_folder)
         output_strs.append(process_metric('vmaf', results))
+    '''
 
-
-    with open(args.output, 'w') as file:
+    with open(args.results_file, 'w') as file:
         file.writelines(output_strs)
 
 
@@ -225,7 +231,7 @@ if __name__ == "__main__":
                         help='File to save the results.')
     parser.add_argument('--calculate_final', default=True, action='store_true',
                         help='Calculate final metrics.')
-    parser.add_argument('--device', default='cpu', type=str,
+    parser.add_argument('--device', default='cuda:1', type=str,
                         help='Device for computations. Default is cuda.')
 
     args = parser.parse_args()

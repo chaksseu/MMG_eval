@@ -2,31 +2,25 @@
 import torchaudio
 import numpy as np
 from scipy.spatial.distance import cosine
-import re  # 정규 표현식 사용을 위해 import
+import re  
+
+
+excluded_words = ['batch', 'proc', 'sample', 'audio']
+pattern_words = re.compile(r'^(?:' + '|'.join(excluded_words) + r')\d*$', re.IGNORECASE)
+pattern_numbers = re.compile(r'^\d+$')
 
 def clean_sentence(filename):
-
-    # 파일 이름에서 밑줄을 공백으로 바꾸고 확장자를 제거
+    if not isinstance(filename, str):
+        raise ValueError("filename must be a string")
+    
     sentence = filename.replace('_', ' ').replace('.wav', '')
-    
-    # 제외할 단어 목록
-    excluded_words = ['batch', 'proc', 'sample', 'audio']
-    
-    # 제외할 단어 패턴 생성 (단어 뒤에 숫자가 올 수 있도록 수정)
-    pattern_words = r'\b(?:' + '|'.join(excluded_words) + r')\d*\b'
-    # 숫자 패턴 (단독으로 있는 숫자 제거)
-    pattern_numbers = r'\b\d+\b'
-    
-    # 제외할 단어 제거
-    sentence = re.sub(pattern_words, '', sentence, flags=re.IGNORECASE)
-    
-    # 숫자 제거
-    sentence = re.sub(pattern_numbers, '', sentence)
-    
-    # 불필요한 공백 제거
-    sentence = ' '.join(sentence.split())
-    
-    return sentence
+    words = sentence.split()
+    filtered_words = [
+        word for word in words 
+        if not pattern_words.match(word) and not pattern_numbers.match(word)
+    ]
+    cleaned_sentence = ' '.join(filtered_words)
+    return cleaned_sentence
 
 def calculate_clap(model_clap, preds_audio, filename, freq):
     resampler = torchaudio.transforms.Resample(orig_freq=16000, new_freq=freq)
@@ -41,9 +35,10 @@ def calculate_clap(model_clap, preds_audio, filename, freq):
     # Get text embeddings from texts
     sentence_clean = clean_sentence(filename)
     
-    text_data = [sentence_clean, sentence_clean]
+    text_data = [sentence_clean]
+    
+    #print(text_data)
 
-    print(text_data)
     text_embed = model_clap.get_text_embedding(text_data)
 
     E_cap = np.array(text_embed[0])
@@ -59,28 +54,3 @@ def calculate_clap(model_clap, preds_audio, filename, freq):
     score = max(100 * similarity, 0)
 
     return score
-
-def clean_sentence(filename):
-    """
-    Clean the filename to extract meaningful text by removing excluded words and numbers.
-
-    Params:
-    -- filename : String, name of the audio file.
-
-    Returns:
-    -- Cleaned sentence as a string.
-    """
-    sentence = filename.replace('_', ' ').replace('.wav', '')
-    
-    excluded_words = ['batch', 'proc', 'sample', 'audio']
-    
-    pattern_words = r'\b(?:' + '|'.join(excluded_words) + r')\b'
-    pattern_numbers = r'\b\d+\b'
-    
-    sentence = re.sub(pattern_words, '', sentence, flags=re.IGNORECASE)
-    
-    sentence = re.sub(pattern_numbers, '', sentence)
-    
-    sentence = ' '.join(sentence.split())
-    
-    return sentence

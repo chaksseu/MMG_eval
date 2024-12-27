@@ -8,13 +8,15 @@ from ImageBind.imagebind import data
 from ImageBind.imagebind.models import imagebind_model
 from ImageBind.imagebind.models.imagebind_model import ModalityType
 
+from tqdm import tqdm
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv_path", default="csv_for_imagebind_test.csv", type=str, help="path to csv file containing mp4 paths, wav paths, and prompt")
     args = parser.parse_args()
 
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cuda:1" if torch.cuda.is_available() else "cpu"
     model = imagebind_model.imagebind_huge(pretrained=True)
     model.eval()
     model.to(device)
@@ -25,7 +27,8 @@ def main():
     avg_score_ta = 0.0
     avg_score_tv = 0.0
     avg_score_av = 0.0
-    for idx in range(flist.shape[0]):
+
+    for idx in tqdm(range(flist.shape[0]), desc="Processing files"):
 
         mp4_path = flist.iloc[idx][0]
         wav_path = flist.iloc[idx][1]
