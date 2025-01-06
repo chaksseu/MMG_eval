@@ -231,7 +231,7 @@ if __name__ == "__main__":
                         help='File to save the results.')
     parser.add_argument('--calculate_final', default=True, action='store_true',
                         help='Calculate final metrics.')
-    parser.add_argument('--device', default='cuda:1', type=str,
+    parser.add_argument('--device', default='cuda:0', type=str,
                         help='Device for computations. Default is cuda.')
 
     args = parser.parse_args()

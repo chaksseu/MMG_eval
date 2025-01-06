@@ -102,9 +102,9 @@ def get_featuresdict( dataloader, device, mel_model):
     out = {k: torch.cat(v, dim=0) for k, v in out.items()}
     return {**out, **out_meta}
 
-def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, clap_model):
+def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, clap_model, device="cuda"):
     scores = {metric: [] for metric in metrics}
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(device if torch.cuda.is_available() else 'cpu')
     ###device = 'cpu'
     
     if target_folder == None or not check_folders(preds_folder, target_folder):
@@ -326,6 +326,10 @@ if __name__ == '__main__':
     # Results path
     parser.add_argument('--results_file', required=True,
                         help='Path to the text file to save the results.')
+    # device
+    parser.add_argument('--device', default="cuda",
+                        help='cuda or cpu')
 
+                        
     args = parser.parse_args()
-    evaluate_audio_metrics(args.preds_folder, args.target_folder, args.metrics, args.results_file, args.clap_model)
+    evaluate_audio_metrics(args.preds_folder, args.target_folder, args.metrics, args.results_file, args.clap_model, args.device)

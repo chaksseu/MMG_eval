@@ -14,9 +14,11 @@ from tqdm import tqdm
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv_path", default="csv_for_imagebind_test.csv", type=str, help="path to csv file containing mp4 paths, wav paths, and prompt")
+    parser.add_argument("--device", default="cuda:0", type=str, help="device")
+
     args = parser.parse_args()
 
-    device = "cuda:1" if torch.cuda.is_available() else "cpu"
+    device = args.device if torch.cuda.is_available() else "cpu"
     model = imagebind_model.imagebind_huge(pretrained=True)
     model.eval()
     model.to(device)

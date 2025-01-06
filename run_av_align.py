@@ -174,6 +174,8 @@ if __name__ == "__main__":
         
         # gt data
         #vfile = file.split('_audio')[0] + '_video'
+        #vfile = file + '_resized'
+
         
         video_path = os.path.join(args.video_dir, f'{file}.mp4')
         audio_path = os.path.join(args.audio_dir, f'{file}.wav')
