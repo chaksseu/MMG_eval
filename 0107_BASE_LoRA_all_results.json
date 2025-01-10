@@ -1,0 +1,32 @@
+{
+  "audio": {
+    "curated": {
+      "CLAP_avg": "30.84978940468794",
+      "CLAP_std": "",
+      "FAD": "7.41073"
+    },
+    "random": {
+      "CLAP_avg": "30.84978940468794",
+      "CLAP_std": "",
+      "FAD": "7.23430"
+    }
+  },
+  "video": {
+    "curated": {
+      "FVD": "2606.488",
+      "CLIP_avg": "29.926",
+      "CLIP_std": ""
+    },
+    "random": {
+      "FVD": "2559.849",
+      "CLIP_avg": "29.926",
+      "CLIP_std": ""
+    }
+  },
+  "av_align": {
+    "av_align": "0.3718538217617378"
+  },
+  "imagebind_score": {
+    "imagebind_score": "[0.2545222]"
+  }
+}

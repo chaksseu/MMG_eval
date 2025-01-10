@@ -8,12 +8,13 @@
 
 
 # 기본 정보 입력
-MODEL_TYPE="MMG" 
-DATE="0106"
+MODEL_TYPE="BASE_LoRA" 
+DATE="0107"
 DEVICE="cuda:0"
 
 PRED_BASE="/workspace/dataset/${DATE}_output_${MODEL_TYPE}_epoch90_50steps"
-TARGET_BASE="/workspace/dataset/vggsound_sparse_test_origin_32s_40f_256"
+TARGET_CURATED="/workspace/dataset/vggsound_sparse_test_curated_final"
+TARGET_RANDOM="/workspace/dataset/vggsound_sparse_test_random_final"
 FINAL_JSON="${DATE}_${MODEL_TYPE}_all_results.json"
 
 
@@ -143,7 +144,7 @@ AV_ALIGN_JSON_KEY="av_align"
 
 # ImageBind Score 설정
 IMAGEBIND_CSV_PATH="$PRED_BASE/file_pairs.csv"
-IMAGEBIND_RESULTS="imagebind_results.txt"
+IMAGEBIND_RESULTS="${DATE}_${MODEL_TYPE}_imagebind_results.txt"
 IMAGEBIND_JSON_KEY="imagebind_score"
 
 
@@ -151,12 +152,12 @@ IMAGEBIND_JSON_KEY="imagebind_score"
 CURATED_KEY="curated"
 
 CURATED_AUDIO_PREDS="$PRED_BASE/audio"
-CURATED_AUDIO_TARGET="$TARGET_BASE/vggsound_sparse_test_curated_40_frames_256/audio"
+CURATED_AUDIO_TARGET="$TARGET_CURATED/audio"
 CURATED_AUDIO_METRICS="CLAP FAD"
 CURATED_AUDIO_RESULTS="${DATE}_curated_audio_eval_${MODEL_TYPE}_epoch90_50steps.txt"
 
 CURATED_VIDEO_PREDS="$PRED_BASE/video"
-CURATED_VIDEO_TARGET="$TARGET_BASE/vggsound_sparse_test_curated_40_frames_256/video"
+CURATED_VIDEO_TARGET="$TARGET_CURATED/video"
 CURATED_VIDEO_METRICS="fvd clip"
 CURATED_VIDEO_RESULTS="${DATE}_curated_video_eval_${MODEL_TYPE}_epoch90_50steps.txt"
 
@@ -164,12 +165,12 @@ CURATED_VIDEO_RESULTS="${DATE}_curated_video_eval_${MODEL_TYPE}_epoch90_50steps.
 RANDOM_KEY="random"
 
 RANDOM_AUDIO_PREDS="$PRED_BASE/audio"
-RANDOM_AUDIO_TARGET="$TARGET_BASE/vggsound_sparse_test_random_32s_40frames_256/audio"
+RANDOM_AUDIO_TARGET="$TARGET_RANDOM/audio"
 RANDOM_AUDIO_METRICS="CLAP FAD"
 RANDOM_AUDIO_RESULTS="${DATE}_random_audio_eval_${MODEL_TYPE}_epoch90_50steps.txt"
 
 RANDOM_VIDEO_PREDS="$PRED_BASE/video"
-RANDOM_VIDEO_TARGET="$TARGET_BASE/vggsound_sparse_test_random_32s_40frames_256/video"
+RANDOM_VIDEO_TARGET="$TARGET_RANDOM/video"
 RANDOM_VIDEO_METRICS="fvd clip"
 RANDOM_VIDEO_RESULTS="${DATE}_random_video_eval_${MODEL_TYPE}_epoch90_50steps.txt"
 

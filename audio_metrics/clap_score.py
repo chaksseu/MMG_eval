@@ -5,7 +5,7 @@ from scipy.spatial.distance import cosine
 import re  
 
 
-excluded_words = ['batch', 'proc', 'sample', 'audio']
+excluded_words = ['clip', 'test', 'sparse', 'vggsound','batch', 'proc', 'sample', 'audio', 'video']
 pattern_words = re.compile(r'^(?:' + '|'.join(excluded_words) + r')\d*$', re.IGNORECASE)
 pattern_numbers = re.compile(r'^\d+$')
 

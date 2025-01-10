@@ -1,14 +1,12 @@
 import os
 import csv
-
-# 기본 디렉토리 설정
-#base_dir = "/workspace/dataset/vggsound_sparse_test_origin_32s_40f_256/vggsound_sparse_test_random_32s_40frames_256"
+import argparse
 
 # Argument parser 설정
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate a CSV file of matching video and audio files.")
     parser.add_argument("--base_dir", type=str, required=True, help="Base directory containing 'audio' and 'video' folders.")
-    parser.add_argument("--output_csv", type=str, default="file_pairs.csv", help="Output CSV file path.")
+    #parser.add_argument("--output_csv", type=str, default="file_pairs.csv", help="Output CSV file path.")
     return parser.parse_args()
 
 def main():
@@ -16,9 +14,10 @@ def main():
 
     # 기본 디렉토리 설정
     base_dir = args.base_dir
+    output_csv = f"{base_dir}/file_pairs.csv"
     audio_dir = os.path.join(base_dir, "audio")
     video_dir = os.path.join(base_dir, "video")
-    output_csv = args.output_csv
+    #output_csv = args.output_csv
 
     # 오디오 및 비디오 파일 목록 가져오기
     audio_files = set([f for f in os.listdir(audio_dir) if f.endswith('.wav')])

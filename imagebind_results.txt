@@ -1,0 +1,2 @@
+AUDIO-VIDEO SCORE: [0.27613983]
+Number of processed data: 292

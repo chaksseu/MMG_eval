@@ -58,103 +58,29 @@ from feature_extractors.panns import Cnn14
 def check_folders(preds_folder, target_folder):
     preds_files = [f for f in os.listdir(preds_folder) if f.endswith('.wav')]
     target_files = [f for f in os.listdir(target_folder) if f.endswith('.wav')]
-
-
     if len(preds_files) != len(target_files):
         print('Mismatch in number of files between preds and target folders.')
         return False
-    '''
-    if set(preds_files) != set(target_files):
-        print('Mismatch in filenames between preds and target folders.')
-        return False
-    '''
     return True
 
-
-def get_featuresdict( dataloader, device, mel_model):
-    out = None
-    out_meta = None
-
-    for waveform, filename in tqdm(dataloader):
-        
-        metadict = {
-            'file_path_': filename,
-        }
-        waveform = waveform.squeeze(1)
-
-        waveform = waveform.float().to(device)
-
-        with torch.no_grad():
-            featuresdict = mel_model(waveform) # 'logits': [1, 527]
-
-        featuresdict = {k: [v.cpu()] for k, v in featuresdict.items()}
-
-        if out is None:
-            out = featuresdict
-        else:
-            out = {k: out[k] + featuresdict[k] for k in out.keys()}
-
-        if out_meta is None:
-            out_meta = metadict
-        else:
-            out_meta = {k: out_meta[k] + metadict[k] for k in out_meta.keys()}
-
-    out = {k: torch.cat(v, dim=0) for k, v in out.items()}
-    return {**out, **out_meta}
-
-def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, clap_model, device="cuda"):
+def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, clap_model, device="cpu"):
     scores = {metric: [] for metric in metrics}
-    device = torch.device(device if torch.cuda.is_available() else 'cpu')
-    ###device = 'cpu'
     
-    if target_folder == None or not check_folders(preds_folder, target_folder):
+    if target_folder is None or not check_folders(preds_folder, target_folder):
         text = 'Running only reference-free metrics'
         same_name = False
-
-    elif check_folders(preds_folder, target_folder):
+    else:
         text = 'Running all metrics specified'
         same_name = True
 
-        # Initialize the specified metrics
-        si_sdr = ScaleInvariantSignalDistortionRatio() if 'SI_SDR' in metrics else None
-        sdr_calculator = SignalDistortionRatio() if 'SDR' in metrics else None
-        si_snr = ScaleInvariantSignalNoiseRatio() if 'SI_SNR' in metrics else None
-        snr_calculator = SignalNoiseRatio() if 'SNR' in metrics else None
-        fs = 16000
-
-
+    # Frechet Audio Distance 사용 여부
     if 'FAD' in metrics or 'KL' in metrics or 'ISC' in metrics or 'FD' in metrics:
-
-        backbone = 'cnn14'
         sampling_rate = 16000
-        frechet = FrechetAudioDistance()
-        
-        frechet.model = frechet.model.to(device)
-
-        if sampling_rate == 16000:
-            mel_model = Cnn14(
-                sample_rate=16000,
-                window_size=512,
-                hop_size=160,
-                mel_bins=64,
-                fmin=50,
-                fmax=8000,
-                classes_num=527,
-            )
-        else:
-            raise ValueError(
-                'We only support the evaluation on 16kHz sampling rate.'
-            )
-
-        mel_model.eval()
-        mel_model.to(device)
-        fbin_mean, fbin_std = None, None
-
-    
+        # 여기서 device를 전달하여 FAD 클래스가 올바른 디바이스를 사용하도록 함
+        frechet = FrechetAudioDistance(device=device)
         torch.manual_seed(0)
-
-        num_workers = 6
-
+        
+        num_workers = 0
         outputloader = DataLoader(
             WaveDataset(
                 preds_folder,
@@ -165,7 +91,6 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
             sampler=None,
             num_workers=num_workers,
         )
-
         resultloader = DataLoader(
             WaveDataset(
                 target_folder,
@@ -176,19 +101,13 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
             sampler=None,
             num_workers=num_workers,
         )
-
         out = {}
 
-        # FAD
+        # FAD 계산
         if 'FAD' in metrics:
             fad_score = frechet.score(preds_folder, target_folder, limit_num=None)
             out['frechet_audio_distance'] = fad_score
         
-            #print('Extracting features from %s.' % target_folder)
-            #featuresdict_2 = get_featuresdict(resultloader, device, mel_model)
-            
-            #print('Extracting features from %s.' % preds_folder)
-            #featuresdict_1 = get_featuresdict(outputloader, device, mel_model)
         '''
         if check_folders(preds_folder, target_folder) and 'KL' in metrics:
             kl_sigmoid, kl_softmax, kl_ref, paths_1 = calculate_kl(
@@ -197,34 +116,6 @@ def evaluate_audio_metrics(preds_folder, target_folder, metrics, results_file, c
             out['kullback_leibler_divergence_sigmoid'] = float(kl_sigmoid)
             out['kullback_leibler_divergence_softmax'] =  float(kl_softmax)
 
-
-        if 'ISC' in metrics:
-            print('Extracting features from %s.' % preds_folder)
-            featuresdict_1 = get_featuresdict(outputloader, device, mel_model)
-
-            mean_isc, std_isc = calculate_isc(
-                featuresdict_1,
-                feat_layer_name='logits',
-                splits=10,
-                samples_shuffle=True,
-                rng_seed=2020,
-            )
-            out['inception_score_mean'] =  mean_isc
-            out['inception_score_std'] = std_isc
-
-
-        if 'FD' in metrics:
-            print('Extracting features from %s.' % target_folder)
-            featuresdict_2 = get_featuresdict(resultloader, device, mel_model)
-            
-            print('Extracting features from %s.' % preds_folder)
-            featuresdict_1 = get_featuresdict(outputloader, device, mel_model)
-
-            if('2048' in featuresdict_1.keys() and '2048' in featuresdict_2.keys()):
-                metric_fid = calculate_fid(
-                    featuresdict_1, featuresdict_2, feat_layer_name='2048'
-                )
-                out['frechet_distance'] = round(metric_fid, 3)
         '''
 
     # Loading Clap Model
@@ -307,29 +198,26 @@ CLAP_MODEL_DESCRIPTIONS = {
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluate audio on acoustic metrics.')
 
-    # Audio paths
-    parser.add_argument('--preds_folder', required=True,
-                        help='Path to the folder with predicted audio files.')
-                        
-    parser.add_argument('--target_folder', required=False, default=None,
-                        help='Path to the folder with target audio files.')
-
-    # Metrics related
+    parser.add_argument('--preds_folder', required=True, help='Path to the folder with predicted audio files.')
+    parser.add_argument('--target_folder', required=False, default=None, help='Path to the folder with target audio files.')
+    
     parser.add_argument('--metrics', nargs='+',
                         choices=['SI_SDR', 'SDR', 'SI_SNR', 'SNR', 'PESQ', 'STOI', 'CLAP', 'FAD', 'ISC', 'FD', 'KL'],
                         help='List of metrics to calculate.')
-
-    # CLAP model selection
-    parser.add_argument('--clap_model', type=int, default=1,
-                        help=f'CLAP model id for score computations.')
-
-    # Results path
-    parser.add_argument('--results_file', required=True,
-                        help='Path to the text file to save the results.')
-    # device
-    parser.add_argument('--device', default="cuda",
-                        help='cuda or cpu')
+    
+    parser.add_argument('--clap_model', type=int, default=1, help='CLAP model id for score computations.')
+    parser.add_argument('--results_file', required=True, help='Path to the text file to save the results.')
+    
+    # device 인자 추가 (기본값 "cpu")
+    parser.add_argument('--device', default="cpu", help='Device to use: "cpu" or "cuda"')
 
                         
     args = parser.parse_args()
-    evaluate_audio_metrics(args.preds_folder, args.target_folder, args.metrics, args.results_file, args.clap_model, args.device)
+    evaluate_audio_metrics(
+        args.preds_folder,
+        args.target_folder,
+        args.metrics,
+        args.results_file,
+        args.clap_model,
+        device=args.device
+    )

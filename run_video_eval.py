@@ -52,7 +52,7 @@ import re
 def load_video_frames(video_path, num_frames, frame_size=(224, 224)):
     cap = cv2.VideoCapture(video_path)
     frames = []
-    for _ in range(num_frames):
+    for k in range(num_frames):
         ret, frame = cap.read()
         if not ret:
             break
@@ -63,7 +63,7 @@ def load_video_frames(video_path, num_frames, frame_size=(224, 224)):
             transforms.CenterCrop((frame_size[0], frame_size[1])),
             transforms.ToTensor()
         ])
-        tensor_frame = transform(frame)
+        tensor_frame = transform(frame)        
         frames.append(tensor_frame)
     cap.release()
     return torch.stack(frames)
@@ -79,7 +79,7 @@ def load_videos_from_folder(folder_path, num_frames):
     return torch.stack(videos_tensor_list_orig)
 
 
-excluded_words = ['batch', 'proc', 'sample', 'audio', 'video']
+excluded_words = ['clip', 'test', 'sparse', 'vggsound','batch', 'proc', 'sample', 'audio', 'video']
 pattern_words = re.compile(r'^(?:' + '|'.join(excluded_words) + r')\d*$', re.IGNORECASE)
 pattern_numbers = re.compile(r'^\d+$')
 
@@ -107,6 +107,9 @@ def load_videos_with_caps(folder_path, num_frames):
         video_path = os.path.join(folder_path, video_name)
         video_tensor = load_video_frames(video_path, num_frames)
         videos_tensor_list_orig.append(video_tensor)
+    
+    # print(caps)
+    
     return torch.stack(videos_tensor_list_orig), caps
 
 def process_fvd(data):
