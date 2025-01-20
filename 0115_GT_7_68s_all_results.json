@@ -1,0 +1,16 @@
+{
+  "audio": {
+    "random": {
+      "CLAP_avg": "19.82594256062483",
+      "CLAP_std": "",
+      "FAD": "-0.00000"
+    }
+  },
+  "video": {
+    "random": {
+      "FVD": "-0.001",
+      "CLIP_avg": "28.941",
+      "CLIP_std": ""
+    }
+  }
+}

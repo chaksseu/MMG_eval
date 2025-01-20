@@ -1,0 +1,11 @@
+/workspace/conda/envs/mmg/bin/python: can't open file '/workspace/MMG_eval/MMG_multi_gpu_inference_mmg_1217.py': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/workspace/conda/envs/mmg/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/workspace/conda/envs/mmg/lib/python3.10/site-packages/accelerate/commands/accelerate_cli.py", line 48, in main
+    args.func(args)
+  File "/workspace/conda/envs/mmg/lib/python3.10/site-packages/accelerate/commands/launch.py", line 1168, in launch_command
+    simple_launcher(args)
+  File "/workspace/conda/envs/mmg/lib/python3.10/site-packages/accelerate/commands/launch.py", line 763, in simple_launcher
+    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+subprocess.CalledProcessError: Command '['/workspace/conda/envs/mmg/bin/python', 'MMG_multi_gpu_inference_mmg_1217.py', '--num_gpus', '1', '--bs', '1', '--ckpt_path', 'scripts/evaluation/model.ckpt', '--config', 'configs/inference_t2v_512_v2.0.yaml', '--pretrained_model_name_or_path', 'auffusion/auffusion-full', '--cross_modal_checkpoint_path', '/workspace/workspace/MMG_01/MMG_CHECKPOINTS_1217/1217_MMG_lr_1e-05_batch_512_epoch_90_vggsound_sparse/model.safetensors', '--height', '320', '--width', '512', '--prompt_file', 'prompts/test_prompts_292_2.txt', '--savedir', '/workspace/dataset/0114_BASE_7_68s_2', '--duration', '7.68', '--frames', '96', '--fps', '12.5']' returned non-zero exit status 2.

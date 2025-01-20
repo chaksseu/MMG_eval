@@ -1,0 +1,2 @@
+FVD: 2492.369
+CLIP: Average = 30.744, Std = 2.116
